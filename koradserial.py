@@ -29,22 +29,26 @@ import serial
 __all__ = ['KoradSerial', 'ChannelMode', 'OnOffState', 'Tracking']
 
 
-class ChannelMode(Enum):
+class ChannelMode(dict):
     """ Represents channel modes.
 
     These values should correspond to the values returned by the ``STATUS?`` command.
     """
-    constant_current = 0
-    constant_voltage = 1
+    def __init__(self):
+        super(ChannelMode, self).__init__()
+        self['0'] = 'constant_current'
+        self['1'] = 'constant_voltage'
 
 
-class OnOffState(Enum):
+class OnOffState(dict):
     """ Represents on/off states.
 
     This could just as easily be done as a Boolean, but is explicit.
     """
-    off = 0
-    on = 1
+    def __init__(self):
+        super(dict, self).__init__()
+        self['0'] = 'off'
+        self['1'] = 'on'
 
 
 class Tracking(Enum):
@@ -62,9 +66,9 @@ class Tracking(Enum):
 
     However, I don't have a multi-channel power supply to test these.
     """
-    independent = 0
-    series = 1
-    parallel = 3
+    independent = '0'
+    series = '1'
+    parallel = '3'
 
 
 class Status(object):
@@ -94,25 +98,27 @@ class Status(object):
         :type status: int
         """
         super(Status, self).__init__()
+        self.modes = ChannelMode()
+        self.onoff = OnOffState()
         self.raw = status
-        self.channel1 = ChannelMode(status & 1)
-        self.channel2 = ChannelMode((status >> 1) & 1)
-        self.tracking = Tracking((status >> 2) & 3)
-        self.beep = OnOffState((status >> 4) & 1)
-        self.lock = OnOffState((status >> 5) & 1)
-        self.output = OnOffState((status >> 6) & 1)
+        self.channel1 = self.modes[str(status & 1)]
+        self.channel2 = self.modes[str((status >> 1) & 1)]
+        self.tracking = Tracking(str((status >> 2) & 3))
+        self.beep = self.onoff[str((status >> 4) & 1)]
+        self.lock = self.onoff[str((status >> 5) & 1)]
+        self.output = self.onoff[str((status >> 6) & 1)]
 
     def __repr__(self):
         return "{0}".format(self.raw)
 
     def __str__(self):
         return "Channel 1: {0}, Channel 2: {1}, Tracking: {2}, Beep: {3}, Lock: {4}, Output: {5}".format(
-            self.channel1.name,
-            self.channel2.name,
-            self.tracking.name,
-            self.beep.name,
-            self.lock.name,
-            self.output.name,
+            str(self.channel1),
+            str(self.channel2),
+            str(self.tracking),
+            str(self.beep),
+            str(self.lock),
+            str(self.output),
         )
 
     def __unicode__(self):
@@ -142,6 +148,7 @@ class KoradSerial(object):
             super(KoradSerial.Channel, self).__init__()
             self.__serial = serial_
             self.number = channel_number
+            self.name = 'channel' + str(channel_number)
 
         @property
         def current(self):
@@ -156,6 +163,8 @@ class KoradSerial(object):
 
         @property
         def voltage(self):
+            result = self.__serial.send_receive("VSET{0}?".format(self.number), fixed_length=5)
+            print map (ord, result)
             return float_or_none(self.__serial.send_receive("VSET{0}?".format(self.number), fixed_length=5))
 
         @voltage.setter
@@ -180,6 +189,7 @@ class KoradSerial(object):
             :rtype: float or None
             """
             result = self.__serial.send_receive("VOUT{0}?".format(self.number), fixed_length=5)
+            print "Raw output: %d bytes, values = " % len(result), map (ord, result)
             return float_or_none(result)
 
     class Memory(object):
@@ -265,6 +275,7 @@ class KoradSerial(object):
         super(KoradSerial, self).__init__()
 
         self.__serial = KoradSerial.Serial(port, debug)
+        self.serial = self.__serial
 
         # Channels: adjust voltage and current,  discover current output voltage.
         self.channels = [KoradSerial.Channel(self.__serial, i) for i in range(1, 3)]
