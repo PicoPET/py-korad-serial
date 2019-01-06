@@ -22,6 +22,7 @@ https://gist.github.com/k-nowicki/5379272
 
 
 """
+from __future__ import print_function, unicode_literals
 from enum import Enum
 from time import sleep
 import serial
@@ -164,7 +165,7 @@ class KoradSerial(object):
         @property
         def voltage(self):
             result = self.__serial.send_receive("VSET{0}?".format(self.number), fixed_length=5)
-            print map (ord, result)
+            print(map (ord, result))
             return float_or_none(self.__serial.send_receive("VSET{0}?".format(self.number), fixed_length=5))
 
         @voltage.setter
@@ -189,7 +190,7 @@ class KoradSerial(object):
             :rtype: float or None
             """
             result = self.__serial.send_receive("VOUT{0}?".format(self.number), fixed_length=5)
-            print "Raw output: %d bytes, values = " % len(result), map (ord, result)
+            print("Raw output: %d bytes, values = " % len(result), map (ord, result))
             return float_or_none(result)
 
     class Memory(object):
@@ -236,12 +237,12 @@ class KoradSerial(object):
             self.port = serial.Serial(port, 9600, timeout=1)
 
         def read_character(self):
-            c = self.port.read(1)
+            c = self.port.read(1).decode('ascii')
             if self.debug:
                 if len(c) > 0:
-                    print "read: {0} = '{1}'".format(ord(c), c)
+                    print("read: {0} = '{1}'".format(ord(c), c))
                 else:
-                    print "read: timeout"
+                    print("read: timeout")
             return c
 
         def read_string(self, fixed_length=None):
@@ -263,9 +264,9 @@ class KoradSerial(object):
 
         def send(self, text):
             if self.debug:
-                print "_send: ", text
+                print("_send: ", text)
             sleep(0.1)
-            self.port.write(text)
+            self.port.write(text.encode('ascii'))
 
         def send_receive(self, text, fixed_length=None):
             self.send(text)
