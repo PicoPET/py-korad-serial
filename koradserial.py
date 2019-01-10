@@ -90,6 +90,11 @@ class Status(object):
         5       Lock        0=Lock, 1=Unlock
         6       Output      0=Off, 1=On
         7       N/A         N/A
+
+    Korad KA3005P v2.0 (model string 'KORADKA3005PV2.0') uses all 8 bits with:
+
+        5       OCP         0=Off, 1=On
+        7       OVP         0=Off, 1=On
     """
 
     def __init__(self, status):
@@ -106,20 +111,22 @@ class Status(object):
         self.channel2 = self.modes[str((status >> 1) & 1)]
         self.tracking = Tracking(str((status >> 2) & 3))
         self.beep = self.onoff[str((status >> 4) & 1)]
-        self.lock = self.onoff[str((status >> 5) & 1)]
+        self.ocp = self.onoff[str((status >> 5) & 1)]
         self.output = self.onoff[str((status >> 6) & 1)]
+        self.ovp = self.onoff[str((status >> 7) & 1)]
 
     def __repr__(self):
         return "{0}".format(self.raw)
 
     def __str__(self):
-        return "Channel 1: {0}, Channel 2: {1}, Tracking: {2}, Beep: {3}, Lock: {4}, Output: {5}".format(
+        return "Channel 1: {0}, Channel 2: {1}, Tracking: {2}, Beep: {3}, OCP: {4}, Output: {5}, OVP: {6}".format(
             str(self.channel1),
             str(self.channel2),
             str(self.tracking),
             str(self.beep),
-            str(self.lock),
+            str(self.ocp),
             str(self.output),
+            str(self.ovp)
         )
 
     def __unicode__(self):
